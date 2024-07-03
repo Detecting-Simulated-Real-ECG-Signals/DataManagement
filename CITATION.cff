@@ -1,11 +1,12 @@
 cff-version: 1.2.0
-message: If you use this software, please cite it as below.
+message: "If you use this software, please cite it as below."
 authors:
   - family-names: Brücklmayr
     given-names: Markus
-title: Detection of real and simulated ECG signals
+title: "ECG-DataManagement Software"
 version: 1.0.0
+identifiers:
+  - type: uri
+    value: https://github.com/markus-bruecklmayr/ECG-DataManagement
 type: software
-date-released: 2024-07-12
-license: BSD-3-Clause
-repository-code: https://github.com/Detecting-Simulated-Real-ECG-Signals/DataManagement/tree/main
+date-released: 2024-07-01
