@@ -7,6 +7,6 @@ title: "ECG-DataManagement Software"
 version: 1.0.0
 identifiers:
   - type: uri
-    value: https://github.com/markus-bruecklmayr/ECG-DataManagement
+    value: https://github.com/Detecting-Simulated-Real-ECG-Signals/DataManagement/
 type: software
 date-released: 2024-07-01
