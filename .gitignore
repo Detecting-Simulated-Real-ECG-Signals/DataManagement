@@ -1,0 +1,4 @@
+*.cpython*
+dist
+src/localdatasetmanagement.egg-info
+src/localdataset/data_path.yaml
