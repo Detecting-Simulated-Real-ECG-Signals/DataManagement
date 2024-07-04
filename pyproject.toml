@@ -14,10 +14,6 @@ classifiers = [
 ]
 
 dependencies = [
-    'cordata.corpulsweb>=2023.11.6',
-    'cordata.devices>=2023.11.6',
-    'cordata.explore>=2023.11.6',
-    'cordata.lake>=2023.11.6',
     'scipy>=1.11.3',
     'pandas',
     'numpy',
