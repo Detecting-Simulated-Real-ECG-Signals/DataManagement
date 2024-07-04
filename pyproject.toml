@@ -1,0 +1,30 @@
+[project]
+name = "localdatasetmanagement"
+version = "0.0.1"
+authors = [
+  { name="Markus Brücklmayr", email="markus@bruecklmayr.de" },
+]
+description = "Package to manage local datasets. Developed for corpuls to process CAED-missions."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    'cordata.corpulsweb>=2023.11.6',
+    'cordata.devices>=2023.11.6',
+    'cordata.explore>=2023.11.6',
+    'cordata.lake>=2023.11.6',
+    'scipy>=1.11.3',
+    'pandas',
+    'numpy',
+    'tqdm',
+    'PyYAML',
+    'zipp'
+]
+
+[project.urls]
+Homepage = "https://gitlab.corpuls.com/markus.bruecklmayr/localdatamanagementtool"
