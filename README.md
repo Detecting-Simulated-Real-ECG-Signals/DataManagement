@@ -23,7 +23,7 @@ from localdataset.dataset import LocalDataset
 
 ds = LocalDataset("/path/where/data/is/stored")
 ```
-The data path will be stored an when not specified otherwise be used.
+The data path will be stored. If you initialize the Object, the stored path will be used if not specified otherwise.
 
 ### Download missions
 
