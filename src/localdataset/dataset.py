@@ -11,13 +11,13 @@ from shutil import rmtree as rm_dirs
 from types import FunctionType
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from DataManagement.src.localdataset.import_data import ImportData
 import numpy as np
 import polars as pl
 import pyarrow as pa
 import yaml
 from tqdm import tqdm
 
+from .import_data import ImportData
 from .dataloader import DataLoader, MemoryMappedLoader
 from .dtypes import GID, INDICES, LABEL, TAGS, DataPaths
 from .fourier import fourier_transformation_normalized_avg_histogram
@@ -132,7 +132,7 @@ def split_function(data: List[Any], train_val_test_ration: List[float]) -> Dict[
     Parameters:
     * data
     * train_val_test_ration <List[float]>: ratio is a list of percentages for each split and must sum up to 100.
-    
+
     return
     '''
     if len(train_val_test_ration) != 3:
@@ -364,7 +364,7 @@ class LocalDataset:
             query_filter = pl.col("relevant")
             groupby = "label"
 
-        elif data == "None" or data == None: # accept None-type if user is lazy
+        elif data == "None" or data == None:  # accept None-type if user is lazy
             query_filter = True
             groupby = None
 
@@ -392,7 +392,7 @@ class LocalDataset:
 
         return DataWrapper(grouped_mission_data, retrievel_class, reconstruction_method, reconstruction_args, lightweight)
 
-    def get_mission(self, gid:GID, preprocessing: str = "raw", retrievel_class: DataLoader = None, dataset_version: int = None) -> Mission:
+    def get_mission(self, gid: GID, preprocessing: str = "raw", retrievel_class: DataLoader = None, dataset_version: int = None) -> Mission:
         '''
         Get all relevant informations for one mission.
         '''
