@@ -1,6 +1,6 @@
 # LocalDataManagementTool
 
-Package to manage local datasets. Developed for corpuls to process corpulsAED-missions.
+Package to manage local datasets. Developed for corpuls to manage ECG signals.
 
 ## Build package
 
@@ -23,11 +23,11 @@ from localdataset.dataset import LocalDataset
 
 ds = LocalDataset("/path/where/data/is/stored")
 ```
-The data path will be stored an when not specified otherwise be used.
+The data path will be stored. If you initialize the Object, the stored path will be used if not specified otherwise.
 
 ### Download missions
 
-Add missions with the method 'add_missions'
+Add signals to database:
 
 ```python
 def add_missions_to_database(self, missions: List[Tuple[<GID:str>, <label:str>, np.ndarray]])
