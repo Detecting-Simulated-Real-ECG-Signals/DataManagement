@@ -7,6 +7,7 @@ from typing import Tuple
 import numpy as np
 import polars as pl
 import pyarrow as pa
+from uuid import UUID
 
 from .dtypes import GID, LABEL, TAGS, DataPaths
 
@@ -19,71 +20,71 @@ class DataLoader(ABC):
     @abstractmethod
     def load_mission_data_by_index(self, index: int) -> np.ndarray:
         '''
-        load perprocessed mission data as numpy array
+        Load perprocessed mission data as numpy array
 
-        Input:\n
-        * index: index of the mission\n
+        Input:
+        * index <int>: Index of the mission\n
 
-        Return: data:np.ndarray
+        Return: data <np.ndarray>
         '''
         pass
 
     @abstractmethod
     def load_mission_label_by_index(self, index: int) -> str:
         '''
-        load mission label from info.arrow file
+        Load mission label from info.arrow file
 
         Input:
-        * index: index of the mission
+        * index <int>: Index of the mission\n
 
-        Return: str
+        Return: label <str>
         '''
         pass
 
     @abstractmethod
     def load_mission_tags_by_index(self, index: int) -> str:
         '''
-        load mission label from info.arrow file
+        Load mission label from info.arrow file
 
         Input:
-        * index: index of the mission
+        * index <int>: Index of the mission\n
 
-        Return: str
+        Return: tags <str>
         '''
         pass
 
     @abstractmethod
-    def get_index_by_gid(self, gid: str) -> int:
+    def get_index_by_gid(self, gid: UUID) -> int:
         '''
-        get index for gid
+        Get index for gid
 
         Input:
-        * gid:str mission gid
+        * gid <UUID>: Mission GID
 
-        Return: index:int
+        Return: index <int>
         '''
         pass
 
     @abstractmethod
-    def get_gid_by_index(self, index: int) -> str:
+    def get_gid_by_index(self, index: int) -> GID:
         '''
-        get gid for index
+        Get gid for index
 
         Input:
-        * index:int
+        * index <int>: Index of the mission\n
 
-        Return: gid:str
+        Return: gid <UUID>
         '''
         pass
 
-    def load_mission_informations_by_id(self, index: int) -> Tuple[GID, LABEL, TAGS]:
+    def load_mission_informations_by_id(self, index: int) -> Tuple[UUID, LABEL, TAGS]:
         '''
-        load mission informations from info.arrow file
+        Load mission informations from info.arrow file
 
         Input:
-        * index: index of the mission
+        * index <int>: Index of the mission\n
 
-        Return: GID:str, LABEL:str, TAGs:List[int]
+        Return: gid <UUID>, LABEL <str>, TAGs <List[int]>
         '''
         return self.get_gid_by_index(index), self.load_mission_label_by_index(index), self.load_mission_tags_by_index(index)
 
@@ -126,11 +127,11 @@ class MemoryMappedLoader(DataLoader):
             return self.__info[1][index].as_py()
         return []
 
-    def get_gid_by_index(self, index: int) -> str:
+    def get_gid_by_index(self, index: int) -> GID:
         return self.__uuid['gid'][index].as_py()
 
-    def get_index_by_gid(self, gid: str) -> int:
-        return np.where(self.__uuid['gid'].to_numpy() == gid)[0][0]
+    def get_index_by_gid(self, gid: UUID) -> int:
+        return np.argmax(self.__uuid['gid'].to_numpy() == gid)
 
 
 class SharedMemoryLoader(DataLoader):
@@ -178,15 +179,16 @@ class SharedMemoryLoader(DataLoader):
         if self.__info is not None:
             index = self.__info[index]
         i = self.__labels[index]
-        return self.__reverse_label_map[i*12:12+i*12]
+        return self.__reverse_label_map[i*12:12+i*12] # labels are all 12 char long -> use the length get the gid by index
 
     def load_mission_tags_by_index(self, index: int) -> str:
         if self.__tags is not None:
             return [self.__tags[index]]
         return []
 
-    def get_gid_by_index(self, index: int) -> str:
-        return self.__uuids[index*36:36+index*36]
+    def get_gid_by_index(self, index: int) -> GID:
+        
+        return self.__uuids[index*36:36+index*36]   # uuids are all 36 char long -> use the length get the gid by index
 
-    def get_index_by_gid(self, gid: str) -> int:
-        return int(re.search(gid, self.__uuids[:]).span()[0]/36)
+    def get_index_by_gid(self, gid: UUID) -> int:
+        return int(self.__uuids[:].index(gid) / 36) # uuids are all 36 char long -> use the length get the gid by index

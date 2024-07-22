@@ -1,6 +1,6 @@
 # LocalDataManagementTool
 
-Package to manage local datasets. Developed for corpuls to process CAED-missions.
+Package to manage local datasets. Developed for corpuls to process corpulsAED-missions.
 
 ## Build package
 

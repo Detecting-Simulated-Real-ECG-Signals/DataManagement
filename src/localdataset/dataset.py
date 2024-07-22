@@ -98,7 +98,7 @@ class Data(AbstractDataClass):
         return Mission(index, self.retrievel_class, self.recreation_method, self.recreation_args)
 
 
-class lightWeightData(AbstractDataClass):
+class LightWeightData(AbstractDataClass):
     def __init__(self, retrievel_class: DataLoader, recreation_method: Callable, recreation_args: list, indices: list) -> None:
         super().__init__(retrievel_class, recreation_method, recreation_args, indices)
 
@@ -110,7 +110,7 @@ class DataWrapper:
     def __init__(self, data: Dict[str, INDICES], retrievel_class: DataLoader, recreation_method: Callable, recreation_args: list, lightweight=False) -> None:
 
         if lightweight:
-            object: AbstractDataClass = lightWeightData
+            object: AbstractDataClass = LightWeightData
         else:
             object: AbstractDataClass = Data
 
@@ -125,7 +125,16 @@ def relevant_mission(data: np.ndarray, threshold=1) -> bool:
     return avg_fft_normalized[1:].sum() >= threshold
 
 
-def split_function(data: List[Any], train_val_test_ration: List[int]) -> Dict[str, Tuple[str, str]]:
+def split_function(data: List[Any], train_val_test_ration: List[float]) -> Dict[str, Tuple[str, str]]:
+    '''
+    Split all relevant missions into train, validation and test.
+
+    Parameters:
+    * data
+    * train_val_test_ration <List[float]>: ratio is a list of percentages for each split and must sum up to 100.
+    
+    return
+    '''
     if len(train_val_test_ration) != 3:
         raise AssertionError(
             "train_val_test must contain one value for each set!")
@@ -135,12 +144,12 @@ def split_function(data: List[Any], train_val_test_ration: List[int]) -> Dict[st
     shuffle(data)  # random shuffle
 
     # split dataset
-    return {"train": data[:round(len(data)*0.6)], "validation": data[round(len(data)*0.6):round(len(data)*0.7)], "test": data[round(len(data)*0.7):]}
+    return {"train": data[:round(len(data)*train_val_test_ration[0])], "validation": data[round(len(data)*train_val_test_ration[0]):round(len(data)*train_val_test_ration[1])], "test": data[round(len(data)*train_val_test_ration[1]):]}
 
 
 class LocalDataset:
     '''
-    Dataset class to download missions of CAED.
+    Dataset class to manage timeseries missions.
     '''
     __local_path: Path  # Base path
 
@@ -184,7 +193,7 @@ class LocalDataset:
                 with open(data_path, 'r') as file:
                     local_path = Path(yaml.safe_load(file)["DATA_PATH"])
             else:
-                AssertionError(
+                ValueError(
                     "No data-storage path yet. You must define one on first initialization!")
         else:
             with open(data_path, 'w') as file:
@@ -209,7 +218,7 @@ class LocalDataset:
     #                                                                                                               #
     #################################################################################################################
 
-    def __read_reconstruction_info(self, preprocessing: str, dataset_version: int) -> Tuple[Callable, list, Path]:
+    def __create_reconstruction_info(self, preprocessing: str, dataset_version: int) -> Tuple[Callable, list, Path]:
         if preprocessing == "raw":
             reconstruction_method = lambda data, tags, *args: data
             reconstruction_args = []
@@ -243,7 +252,7 @@ class LocalDataset:
 
     def __read_mission_info(self, dataset_version: int = None, return_version=False) -> pl.DataFrame:
         '''
-        read mission base info from file accordint to dataset version. If dataset_version is None, return newes.
+        Read mission base info from file accordint to dataset version. If dataset_version is None, return newes.
 
         Dataset contains index, gid, label, relevant and split
         '''
@@ -291,7 +300,7 @@ class LocalDataset:
             dataset_version, return_version=True)
 
         # load missions from correct file
-        reconstruction_method, reconstruction_args, paths = self.__read_reconstruction_info(
+        reconstruction_method, reconstruction_args, paths = self.__create_reconstruction_info(
             preprocessing, dataset_version)
 
         # read base infos
@@ -315,7 +324,7 @@ class LocalDataset:
         else:
             return base_infos, paths, reconstruction_method, reconstruction_args
 
-    def get_data(self, data: str = "split", preprocessing: str = "raw", labels: List[str] = ["test_mission", "real_mission"], gids: Optional[List[str]] = None, dataset_version: int = None, retrievel_class: DataLoader = None, lightweight: bool = False) -> DataWrapper:
+    def get_data(self, data: str = "split", preprocessing: str = "raw", labels: List[str] = ["test_mission", "real_mission"], gids: Optional[List[GID]] = None, dataset_version: int = None, retrievel_class: DataLoader = None, lightweight: bool = False) -> DataWrapper:
         '''
         return DataLoader-Object with the selected data\\
         data can be: 
@@ -355,7 +364,7 @@ class LocalDataset:
             query_filter = pl.col("relevant")
             groupby = "label"
 
-        elif data == "None" or data == None:
+        elif data == "None" or data == None: # accept None-type if user is lazy
             query_filter = True
             groupby = None
 
@@ -383,7 +392,7 @@ class LocalDataset:
 
         return DataWrapper(grouped_mission_data, retrievel_class, reconstruction_method, reconstruction_args, lightweight)
 
-    def get_mission(self, mission_gid, preprocessing: str = "raw", retrievel_class: DataLoader = None, dataset_version: int = None) -> Mission:
+    def get_mission(self, gid:GID, preprocessing: str = "raw", retrievel_class: DataLoader = None, dataset_version: int = None) -> Mission:
         '''
         Get all relevant informations for one mission.
         '''
@@ -391,10 +400,10 @@ class LocalDataset:
         mission_data, paths, reconstruction_method, reconstruction_args = self.__read_mission_info_according_to_preprocessing(
             preprocessing, dataset_version)
 
-        selected_mission = mission_data.filter(pl.col("gid") == mission_gid)
+        selected_mission = mission_data.filter(pl.col("gid") == gid)
 
         assert selected_mission.shape[
-            0] == 1, f"could not find any mission with gid {mission_gid}!"
+            0] == 1, f"could not find any mission with gid {gid}!"
 
         if retrievel_class is None:
             retrievel_class = MemoryMappedLoader(paths)
@@ -479,9 +488,10 @@ class LocalDataset:
 
     def add_missions_to_database(self, missions: Union[List[ImportData], List[Tuple[GID, str, np.ndarray]]]):
         '''
-        Add your non corpuls missions hier:
+        Add your missions using this function:
 
-        Format: List[TUPLE[GID:int, LABEL:str, DATA:np.ndarray[np.float]]]
+        Parameter:
+            * missions <Union[List[ImportData], List[Tuple[GID, str, np.ndarray]]]>
         '''
         if len(missions) < 1:
             raise Exception("missions must contain at least 1 element!")
@@ -589,7 +599,7 @@ class LocalDataset:
             pl.col("column_2").alias("label"),
             pl.col("column_3").alias("relevant"),
             pl.col("column_4").alias("split")
-        )  # TODO can be improfed :)
+        )  # TODO can be improved :)
 
         self.__update_raw_info_file(mission_data_df, old_dataset_version)
 
@@ -696,7 +706,7 @@ class LocalDataset:
         self.__raw_mission_path = self.__local_path / "raw"
         self.__preprocessing_path = self.__local_path / "preprocessing"
 
-    def setup_new_database(self, name: str, path: Union[Path, str], mission_gids: List[GID]):
+    def setup_new_database(self, name: str, path: Union[Path, str], gids: List[GID]):
         path = Path(path) if type(path) is not Path else path
         assert not path.exists(), f"Database '{str(path)}' already exits"
 
@@ -704,7 +714,7 @@ class LocalDataset:
         makedirs(path)
 
         # get missions
-        missions = self.get_data(data="all", gids=mission_gids)
+        missions = self.get_data(data="all", gids=gids)
 
         # switch paths
         self.switch_database(path)
@@ -797,6 +807,10 @@ class LocalDataset:
             print(f"Could not delete '{path}' completly because of Error: {e}")
 
     def add_existing_databases(self, path: Union[Path, str]):
+        '''
+        Add existing database. After this step the database can be accessed via 'def switch_database'
+        '''
+
         path = Path(path) if type(path) is not Path else path
         assert path.exists(), f"Path '{str(path)}' does not exist!"
 
@@ -832,8 +846,16 @@ class LocalDataset:
     #                                                                                                               #
     #################################################################################################################
 
-    def statistics(self, preprocessing="raw", dataset_version: int = None) -> Dict[str, Dict[str, int]]:
-        # load missions from correct file
+    def statistics(self, preprocessing: str = "raw", dataset_version: int = None) -> Dict[str, Dict[str, int]]:
+        '''
+        Return mission statistics of selected preprocessing
+
+        Parameter:
+            * preprocessing <str>: default = "raw"
+            * dataset_version <int>: default = None
+
+        Return: <Dict[str, Dict[str, int]]>
+        '''
 
         info, _, _, _ = self.__read_mission_info_according_to_preprocessing(
             preprocessing, dataset_version)
