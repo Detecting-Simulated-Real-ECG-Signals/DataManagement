@@ -4,7 +4,7 @@ version = "0.0.1"
 authors = [
   { name="Markus Brücklmayr", email="markus@bruecklmayr.de" },
 ]
-description = "Package to manage local datasets. Developed for corpuls to process corpulsAED-missions."
+description = "Package to manage local datasets. Developed for corpuls to process corpulsAED missions."
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
