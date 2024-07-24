@@ -324,7 +324,7 @@ class LocalDataset:
         else:
             return base_infos, paths, reconstruction_method, reconstruction_args
 
-    def get_data(self, data: str = "split", preprocessing: str = "raw", labels: List[str] = ["test_mission", "real_mission"], gids: Optional[List[GID]] = None, dataset_version: int = None, retrievel_class: DataLoader = None, lightweight: bool = False) -> DataWrapper:
+    def get_data(self, data: Optional(str) = "split", preprocessing: str = "raw", labels: List[str] = ["test_mission", "real_mission"], gids: Optional[List[GID]] = None, dataset_version: int = None, retrievel_class: DataLoader = None, lightweight: bool = False) -> DataWrapper:
         '''
         return DataLoader-Object with the selected data\\
         data can be: 
